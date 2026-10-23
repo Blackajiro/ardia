@@ -5,6 +5,7 @@ import { profileNames, requestCreateProfile, type CreateProfilePreset } from "..
 import { useBrowser, type CreateWindowOptions } from "../store/browser";
 import { closesWindow, engineProfile, isIncognitoProfile, resolveWindowId } from "../store/model";
 import { leavesEmptyWindow } from "../store/newTabBar";
+import { groupLabel } from "../store/organize";
 import { engineIdOf, sharingProfiles } from "../store/profiles";
 import { applyHeldReports } from "./nativeEvents";
 import { webviews } from "./webviews";
@@ -41,6 +42,26 @@ export async function closeTab(tabId: string) {
     applyHeldReports();
   }
   store().closeTab(tabId);
+}
+
+export async function closeGroup(groupId: string) {
+  const s = store();
+  const group = s.groups[groupId];
+  if (!group) return;
+  if (!group.pinned && s.settings.warnBeforeClosingTabGroup) {
+    const { confirmed, suppressed } = await confirm({
+      title: `Close “${groupLabel(s, group)}”?`,
+      message: "This closes the group and all its tabs.",
+      confirmTitle: "Close Group",
+      suppression: "Don’t warn me again",
+      destructive: true,
+      windowId: group.windowId,
+    });
+    if (suppressed) store().updateSettings({ warnBeforeClosingTabGroup: false });
+    if (!confirmed) return;
+    applyHeldReports();
+  }
+  if (store().groups[groupId]) store().closeGroup(groupId);
 }
 
 export function toggleMute(tabId: string) {

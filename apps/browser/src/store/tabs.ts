@@ -416,7 +416,7 @@ export const createTabsSlice: StateCreator<BrowserState, [], [], TabsSlice> = (s
     const url = patch.url;
     const supersedes = !!tab.wakeAdoptId && !("wakeAdoptId" in patch) && (!!patch.navigation || !!patch.adoptId || (url !== undefined && url !== tab.url));
     const change = supersedes ? { ...patch, wakeAdoptId: undefined } : patch;
-    const next = merge(tab, url !== undefined && url !== tab.url ? { ...onUrlChange(s, tab, url), ...change } : change);
+    const next = merge(tab, url !== undefined ? { ...onUrlChange(s, tab, url), ...change } : change);
     const live = livePatch ? s.live[id] : undefined;
     const nextLive = live && livePatch ? merge(live, livePatch) : live;
     if (next === tab && nextLive === live) return;
