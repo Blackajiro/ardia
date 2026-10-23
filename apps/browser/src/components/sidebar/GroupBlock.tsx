@@ -24,6 +24,7 @@ import { RenameField, SplitRowItem, TabRowItem } from "./TabRow";
 import { GROUP_COLORS, useSidebarTokens, withAlpha } from "./tokens";
 
 const PAD = GROUP_PAD;
+const MEMBER_INSET = 8;
 
 export const GroupBlock = memo(function GroupBlock({ groupId, section, motion: own = null }: { groupId: string; section: "list" | "pinnedGroups"; motion?: EntryMotion | null }) {
   const windowId = useWindowId();
@@ -58,8 +59,8 @@ export const GroupBlock = memo(function GroupBlock({ groupId, section, motion: o
 
   return (
     <Animated.View ref={wrapper.ref} style={wrapper.style}>
-      <View {...moved} ref={movedRef} style={[{ borderRadius: GROUP_RADIUS, backgroundColor: fill, borderWidth: GROUP_BORDER, borderColor: stroke, paddingHorizontal: PAD }, moved.style as object]}>
-        <View ref={headerRef} {...handle} style={{ marginHorizontal: -PAD }}>
+      <View {...moved} ref={movedRef} style={[{ borderRadius: GROUP_RADIUS, backgroundColor: fill, borderWidth: GROUP_BORDER, borderColor: stroke, paddingLeft: PAD + MEMBER_INSET, paddingRight: PAD }, moved.style as object]}>
+        <View ref={headerRef} {...handle} style={{ marginLeft: -(PAD + MEMBER_INSET), marginRight: -PAD }}>
           <GroupHeader groupId={groupId} windowId={windowId} collapsed={collapsed} open={fold.open} />
         </View>
         <Fold
