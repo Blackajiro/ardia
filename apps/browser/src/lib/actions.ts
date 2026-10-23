@@ -49,8 +49,10 @@ export async function closeGroup(groupId: string) {
   const group = s.groups[groupId];
   if (!group) return;
   if (!group.pinned && s.settings.warnBeforeClosingTabGroup) {
+    const label = groupLabel(s, group);
+    const members = new Set(group.tabIds);
     const { confirmed, suppressed } = await confirm({
-      title: `Close “${groupLabel(s, group)}”?`,
+      title: `Close “${label}”?`,
       message: "This closes the group and all its tabs.",
       confirmTitle: "Close Group",
       suppression: "Don’t warn me again",
@@ -60,6 +62,11 @@ export async function closeGroup(groupId: string) {
     if (suppressed) store().updateSettings({ warnBeforeClosingTabGroup: false });
     if (!confirmed) return;
     applyHeldReports();
+    const latest = store();
+    const current = latest.groups[groupId];
+    if (!current || current.createdAt !== group.createdAt || current.name !== group.name || groupLabel(latest, current) !== label ||
+      current.pinned !== group.pinned || current.windowId !== group.windowId || current.profileId !== group.profileId ||
+      current.tabIds.length !== members.size || current.tabIds.some((id) => !members.has(id))) return;
   }
   if (store().groups[groupId]) store().closeGroup(groupId);
 }

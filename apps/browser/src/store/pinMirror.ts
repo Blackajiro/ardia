@@ -142,7 +142,11 @@ function conform(s: BrowserState, windowId: string, profileId: string, spec: Spe
     used.add(t.id);
     const patch: Partial<Tab> = { ...keyField(t.id, key), pinned: tile, pinnedAsRow: tile && src.pinnedAsRow ? true : undefined, customTitle: src.customTitle, customIcon: src.customIcon };
     patch.pinnedUrl = src.pinnedUrl || src.url || null;
-    if (tile && !hasPage(t) && !samePage(t.url, homeOf(src))) Object.assign(patch, { url: homeOf(src), title: src.title, favicon: src.favicon });
+    if (!hasPage(t) && (tile || samePage(t.url, homeOf(t))) && !samePage(t.url, homeOf(src))) {
+      const url = homeOf(src);
+      const atSource = samePage(src.url, url);
+      Object.assign(patch, { url, title: atSource ? src.title : "", favicon: atSource ? src.favicon : null });
+    }
     tabs[t.id] = { ...t, ...patch };
     return t.id;
   };

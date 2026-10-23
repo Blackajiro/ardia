@@ -3,7 +3,7 @@ import type { StateCreator } from "zustand";
 import { fromLegacyUrl } from "../legacy";
 import { startNavigation } from "../lib/earlyNavigate";
 import type { BrowserState } from "./browser";
-import { leaveGroups, syncGroupOrder } from "./groups";
+import { leaveGroups, syncGroupOrder, syncPinnedUrls } from "./groups";
 import {
   activeTabId,
   closesWindow,
@@ -158,16 +158,17 @@ export function removeTabs(s: BrowserState, ids: string[], record: boolean): Bro
     windows[w.id] = { ...w, tabIds, activeTabIds };
   }
   tabs = adoptOrphans(without(tabs, gone), s.tabs, gone);
+  const groups = leaveGroups(s.groups, gone);
 
   let next: BrowserState = {
     ...s,
-    tabs,
+    tabs: groups === s.groups ? tabs : syncPinnedUrls(tabs, groups),
     windows,
     windowOrder: removedWindows.length ? s.windowOrder.filter((id) => !removedWindows.includes(id)) : s.windowOrder,
     windowUi: removedWindows.length ? without(s.windowUi, removedWindows) : s.windowUi,
     live: without(s.live, gone),
     find: without(s.find, gone),
-    groups: leaveGroups(s.groups, gone),
+    groups,
     splits: removeFromSplits(s.splits, gone),
     selection: pruneSelection(s.selection, gone),
     closedTabs: closed.length ? [...s.closedTabs, ...closed].slice(-MAX_CLOSED_TABS) : s.closedTabs,

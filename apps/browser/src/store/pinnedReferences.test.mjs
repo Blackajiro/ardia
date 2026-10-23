@@ -151,3 +151,77 @@ test("first confirmed redirects initialize blank pins once and ordinary tabs rem
     assert.equal(S().tabs[id].pinnedUrl, kind === "ordinary" ? null : HOME);
   }
 });
+
+test("restoring a tab into a missing group clears its saved pinned reference", async () => {
+  const { id, g } = setup();
+  S().updateTab(id, { url: AWAY });
+  const { removeTabs } = await import("./tabs.ts");
+  useBrowser.setState(removeTabs(S(), [id], true));
+  assert.equal(S().groups[g], undefined);
+  S().reopenClosedTab();
+  const restored = Object.values(S().groups).find((group) => group.id === g);
+  const tab = S().tabs[restored.tabIds[0]];
+  assert.equal(restored.pinned, false);
+  assert.equal(tab.url, AWAY);
+  assert.equal(tab.pinnedUrl, null);
+  assert.equal(awayFromPin(tab), false);
+});
+
+for (const moving of ["add", "create", "groupTabs", "place", "split", "remove"]) {
+  test(`regrouping clears the remaining auto-ungrouped reference: ${moving}`, async () => {
+    S().hydrate({});
+    S().updateSettings({ cmdClickCreatesTabGroup: true });
+    const w = S().createWindow({ url: HOME });
+    const [first] = S().windows[w].tabIds;
+    const second = S().newTab(w, { url: "https://example.com/second", openerId: first, background: true });
+    const automatic = Object.values(S().groups).find((group) => group.tabIds.includes(first));
+    assert.equal(automatic.autoUngroup, true);
+    S().updateGroup(automatic.id, { pinned: true });
+    S().updateTab(first, { url: "https://example.com/first-away" });
+    S().updateTab(second, { url: AWAY });
+    const third = S().newTab(w, { url: "https://example.com/third" });
+    const target = S().groupTabs([third]);
+    if (moving === "add") S().addTabsToGroup(target, [first]);
+    else if (moving === "create") S().createGroup([first]);
+    else if (moving === "groupTabs") S().groupTabs([first]);
+    else if (moving === "place") S().placeTabs([first], { pinned: false, groupId: target });
+    else if (moving === "split") S().createSplit([third, first], "horizontal");
+    else {
+      const { removeTabs } = await import("./tabs.ts");
+      useBrowser.setState(removeTabs(S(), [first], false));
+    }
+    assert.equal(S().groups[automatic.id], undefined);
+    assert.equal(S().tabs[second].pinnedUrl, null);
+    assert.equal(S().tabs[second].url, AWAY);
+    assert.equal(awayFromPin(S().tabs[second]), false);
+    if (moving !== "remove") assert.equal(S().tabs[first].pinnedUrl, moving === "create" ? null : HOME);
+  });
+}
+
+test("a dormant group copy at its previous reference follows a reference edit", () => {
+  const { id } = setup();
+  S().updateTab(id, { title: "Old reference", favicon: "data:old-reference-icon" });
+  const other = S().createWindow({ url: "https://other.com" });
+  const copy = Object.values(S().tabs).find((t) => t.windowId === other && t.pinKey === id);
+  assert.equal(copy.url, HOME);
+  assert.equal(copy.unloaded, true);
+  S().setPinnedUrl(id, "https://example.com/replaced");
+  assert.equal(S().tabs[copy.id].pinnedUrl, "https://example.com/replaced");
+  assert.equal(S().tabs[copy.id].url, "https://example.com/replaced");
+  assert.equal(S().tabs[copy.id].title, "");
+  assert.equal(S().tabs[copy.id].favicon, null);
+  assert.equal(S().tabs[id].url, HOME);
+  assert.equal(S().tabs[id].title, "Old reference");
+});
+
+test("a dormant group copy away from its reference keeps its current page after a reference edit", () => {
+  const { id } = setup();
+  S().updateTab(id, { url: AWAY });
+  const other = S().createWindow({ url: "https://other.com" });
+  const copy = Object.values(S().tabs).find((t) => t.windowId === other && t.pinKey === id);
+  assert.equal(copy.url, AWAY);
+  S().setPinnedUrl(id, "https://example.com/replaced");
+  assert.equal(S().tabs[copy.id].pinnedUrl, "https://example.com/replaced");
+  assert.equal(S().tabs[copy.id].url, AWAY);
+  assert.equal(S().tabs[id].url, AWAY);
+});

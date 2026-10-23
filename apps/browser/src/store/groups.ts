@@ -96,7 +96,7 @@ export const createGroupsSlice: StateCreator<BrowserState, [], [], GroupsSlice> 
       createdAt: Date.now(),
     };
     const groups = { ...leaveGroups(s.groups, members), [group.id]: group };
-    set({ groups, tabs: syncPinnedUrls(s.tabs, groups, [...members]), windows: { ...s.windows, [w.id]: window } });
+    set({ groups, tabs: syncPinnedUrls(s.tabs, groups, w.tabIds), windows: { ...s.windows, [w.id]: window } });
     return group.id;
   },
 
@@ -124,7 +124,7 @@ export const createGroupsSlice: StateCreator<BrowserState, [], [], GroupsSlice> 
       const w = s.windows[group.windowId]!;
       const window = { ...w, tabIds: placeBlock(w.tabIds, [...group.tabIds, ...adding]) };
       const groups = { ...leaveGroups(s.groups, new Set(adding)), [groupId]: { ...group, tabIds: [...group.tabIds, ...adding] } };
-      return { groups, tabs: syncPinnedUrls(s.tabs, groups, adding), windows: { ...s.windows, [w.id]: window } };
+      return { groups, tabs: syncPinnedUrls(s.tabs, groups, w.tabIds), windows: { ...s.windows, [w.id]: window } };
     });
   },
 

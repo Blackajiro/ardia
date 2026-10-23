@@ -69,8 +69,7 @@ class Device {
       const p = await run(
         profileId === "default" ? "p" : `p:${profileId}`,
         [
-          adapters.pinnedReferencesAdapter(profileId),
-          ...(this.legacy ? [] : [adapters.pinnedRowsAdapter(profileId)]),
+          ...(this.legacy ? [] : [adapters.pinnedReferencesAdapter(profileId), adapters.pinnedRowsAdapter(profileId)]),
           adapters.pinnedAdapter(profileId),
           adapters.bookmarksAdapter(profileId),
           adapters.historyAdapter(profileId),
@@ -362,6 +361,26 @@ test("a Mac on an older version sees rows as tiles, and its edits never turn a r
   c.with(() => S().createWindow({ url: "https://c-home.example/" }));
   await syncAll([c]);
   assert.deepEqual(rowsOf(c), { tiles: ["https://mail.example/"], rows: ["https://docs.example/ Docs"] }, "a new Mac gets the row");
+});
+
+test("legacy devices publish pin records without newer row or reference records", async () => {
+  const folder = new Folder();
+  const old = new Device("legacyPinReferences", folder, { legacy: true });
+  old.with(() => {
+    const w = S().createWindow({ url: "https://home.example/" });
+    const tab = S().newTab(w, { url: "https://docs.example/home" });
+    S().groupTabs([tab]);
+    S().pinTabs([S().newTab(w, { url: "https://row.example/" })], true, true);
+  });
+  await old.sync();
+  await old.sync();
+  const keys = [...folder.files.values()].filter((file) => file.scope === "p").flatMap((file) => {
+    const payload = JSON.parse(file.payload);
+    return payload.kind === "log" ? payload.ops.map((op) => op.k) : Object.keys(payload.records);
+  });
+  assert.ok(keys.some((key) => key.startsWith("pin:t:")), "the legacy fixture published its pin");
+  assert.equal(keys.some((key) => key.startsWith("pinrow:")), false);
+  assert.equal(keys.some((key) => key.startsWith("pinref:")), false);
 });
 
 test("a row mark that arrives before its pinned tab still makes a row, and isn't deleted meanwhile", async () => {

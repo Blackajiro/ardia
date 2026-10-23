@@ -231,7 +231,7 @@ export function withGroup(
   const groups = { ...leaveGroups(s.groups, members), [group.id]: group };
   tabIds = orderSections(tabIds, s.tabs, groups);
   const window = { ...w, tabIds };
-  return [{ ...s, tabs: syncPinnedUrls(s.tabs, groups, [...members]), groups: syncGroupOrder(groups, window), windows: { ...s.windows, [w.id]: window } }, group.id];
+  return [{ ...s, tabs: syncPinnedUrls(s.tabs, groups, w.tabIds), groups: syncGroupOrder(groups, window), windows: { ...s.windows, [w.id]: window } }, group.id];
 }
 
 function closedEntries(s: BrowserState, ids: string[]): ClosedTab[] {
@@ -479,7 +479,7 @@ export function placing(s: BrowserState, ids: string[], p: TabPlacement): Browse
   tabIds = orderSections(tabIds, tabs, groups);
   const window: BrowserWindow = { ...w, tabIds };
   const pinChoices = chosen ? { ...s.pinChoices, [first.profileId]: chosen } : s.pinChoices;
-  return { ...s, tabs: syncPinnedUrls(tabs, groups, moving), pinChoices, pinSync, groups: syncGroupOrder(groups, window), windows: { ...s.windows, [w.id]: window } };
+  return { ...s, tabs: syncPinnedUrls(tabs, groups, w.tabIds), pinChoices, pinSync, groups: syncGroupOrder(groups, window), windows: { ...s.windows, [w.id]: window } };
 }
 
 export function forgetClosedPrivateWindows(s: BrowserState): Partial<BrowserState> | null {
