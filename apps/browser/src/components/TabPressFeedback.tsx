@@ -1,20 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AccessibilityInfo, Animated, Easing, type StyleProp, type ViewStyle } from "react-native";
+import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
+import { Animated, Easing, type StyleProp, type ViewStyle } from "react-native";
+import { tabPressMotion } from "./tabPressMotion";
 
 export function TabPressFeedback({ pressed, children, style }: { pressed: boolean; children: ReactNode; style?: StyleProp<ViewStyle> }) {
   const progress = useRef(new Animated.Value(0)).current;
-  const [reduceMotion, setReduceMotion] = useState(true);
-  useEffect(() => {
-    let mounted = true;
-    AccessibilityInfo.isReduceMotionEnabled().then((on) => {
-      if (mounted) setReduceMotion(on);
-    }, () => {});
-    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduceMotion);
-    return () => {
-      mounted = false;
-      subscription.remove();
-    };
-  }, []);
+  const reduceMotion = useSyncExternalStore(tabPressMotion.subscribe, tabPressMotion.getSnapshot);
   useEffect(() => {
     const animation = Animated.timing(progress, {
       toValue: pressed ? 1 : 0,

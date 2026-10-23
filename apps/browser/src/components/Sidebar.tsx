@@ -391,7 +391,7 @@ function PageRows({ windowId, profileId, current, rows, lazy, offScreen, tiles, 
           <Tail id="tail:pinnedGroups" section="pinnedGroups" />
         </View>
         {offScreen ? null : <LiveFolders windowId={windowId} spaced={pinnedSection} />}
-        {divided ? <ClearDivider windowId={windowId} spaced={pinnedSection} /> : null}
+        {divided ? <ClearDivider windowId={windowId} current={current} spaced={pinnedSection} /> : null}
         <View
           ref={(v) => {
             controller?.regions.set("list", v);
